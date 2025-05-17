@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<!-- saved from url=(0025)https://www.experilux.io/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4/5/6 G</title>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            height: 300vh;
+            overflow-x: hidden;
+        }
+        
+        /* Only hide cursor and show custom cursor on non-mobile devices */
+        @media (hover: hover) and (pointer: fine) {
+            body {
+                cursor: none;
+            }
+            
+            .cursor {
+                width: 20px;
+                height: 20px;
+                background: rgba(255, 255, 255, 0.8);
+                border-radius: 50%;
+                position: fixed;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+                transition: width 0.2s, height 0.2s;
+                z-index: 9999;
+            }
+        }
+
+        /* Hide cursor on mobile devices */
+        @media (hover: none) and (pointer: coarse) {
+            .cursor {
+                display: none;
+            }
+        }
+        
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .phone-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 300px;
+            height: 600px;
+            opacity: 0;
+            z-index: 100;
+            will-change: transform, opacity;
+        }
+
+        .phone {
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            border-radius: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .phone::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 25px;
+            background: #000;
+            border-radius: 20px;
+            z-index: 2;
+        }
+
+        .phone::after {
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+        }
+
+        .app-grid {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            right: 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 10px;
+        }
+
+        .app-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+
+        .app-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .app-icon.main {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .app-icon.gray {
+            background: rgba(255, 255, 255, 0.05);
+            opacity: 0.3;
+        }
+
+        .soon-text {
+            position: fixed;
+            font-family: Arial, sans-serif;
+            font-size: clamp(100px, 20vw, 200px);
+            font-weight: 900;
+            color: #fff;
+            white-space: nowrap;
+            opacity: 0;
+            top: 50%;
+            left: 0;
+            transform: translate(-100%, -50%);
+            z-index: 200;
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+            letter-spacing: -0.02em;
+            will-change: transform, opacity;
+        }
+
+        .color-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            opacity: 0;
+            mix-blend-mode: overlay;
+            pointer-events: none;
+            z-index: 50;
+            will-change: opacity;
+        }
+
+        .color-wave {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #000;
+            transform: translateY(100%);
+            opacity: 0;
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .wave-text {
+            font-family: Arial, sans-serif;
+            font-size: clamp(50px, 10vw, 120px);
+            font-weight: 900;
+            color: #fff;
+            opacity: 0;
+            transform: translateY(50px);
+            text-align: center;
+            line-height: 1.2;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .floating-marks {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 301;
+        }
+
+        .question-mark {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.3);
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            animation: float 12s infinite;
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(var(--startX), var(--startY)) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.4;
+            }
+            90% {
+                opacity: 0.4;
+            }
+            100% {
+                transform: translate(var(--endX), var(--endY)) rotate(var(--rot));
+                opacity: 0;
+            }
+        }
+
+        .follow-button {
+            padding: 15px 30px;
+            font-size: clamp(16px, 2vw, 24px);
+            font-family: Arial, sans-serif;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .follow-button:hover {
+            transform: translateY(30px) scale(1.05);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.47);
+        }
+
+        .signature {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'Arial', sans-serif;
+            font-size: clamp(0.8em, 3vw, 1.2em);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+            z-index: 1000;
+            will-change: opacity;
+        }
+
+        .background-name {
+    position: fixed;
+    margin: 0;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: Arial, sans-serif;
+    font-size: clamp(2rem, 3vw, 4rem);
+    font-weight: bold;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+        }
+
+
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            }
+            to {
+                text-shadow: 0 0 20px rgba(255, 255, 255, 0.9),
+                             0 0 30px rgba(255, 255, 255, 0.7);
+            }
+        }
+    </style>
+<style type="text/css" id="operaUserStyle"></style><style type="text/css">:root .trc_related_container div[data-item-syndicated="true"], :root [href^="//mage98rquewz.com/"], :root [href^="//x4pollyxxpush.com/"], :root span[id^="ezoic-pub-ad-placeholder-"], :root ins.adsbygoogle[data-ad-slot], :root ins.adsbygoogle[data-ad-client], :root img[src^="https://s-img.adskeeper.com/"], :root guj-ad, :root gpt-ad, :root div[id^="zergnet-widget"], :root div[id^="vuukle-ad-"], :root div[id^="taboola-stream-"], :root div[id^="sticky_ad_"], :root div[id^="st"][style^="z-index: 999999999;"], :root div[id^="gpt_ad_"], :root div[id^="ezoic-pub-ad-"], :root div[id^="dfp-ad-"], :root div[id^="crt-"][style], :root div[id^="adspot-"], :root div[id^="adrotate_widgets-"], :root ps-connatix-module, :root div[id^="ad_position_"], :root div[id^="ad-div-"], :root div[id*="ScriptRoot"], :root div[id*="MarketGid"], :root div[data-id-advertdfpconf], :root div[data-dfp-id], :root hl-adsense, :root div[data-contentexchange-widget], :root div[data-alias="300x250 Ad 2"], :root div[data-adzone], :root div[data-adunit-path], :root div[data-adname], :root div[data-ad-targeting], :root div[data-ad-region], :root div[data-ad-placeholder], :root div[aria-label="Ads"], :root display-ads, :root display-ad-component, :root atf-ad-slot, :root aside[id^="adrotate_widgets-"], :root amp-fx-flying-carpet, :root amp-embed[type="taboola"], :root amp-connatix-player, :root amp-ad-custom, :root amp-ad, :root div[id^="google_dfp_"], :root ad-slot, :root ad-shield-ads, :root a[style="width:100%;height:100%;z-index:10000000000000000;position:absolute;top:0;left:0;"], :root a[onmousedown^="this.href='https://paid.outbrain.com/network/redir?"] + .ob_source, :root a[href^="https://xbet-4.com/"], :root div[id^="ad-position-"], :root a[href^="https://www.toprevenuegate.com/"], :root a[href^="https://www.purevpn.com/"][href*="&utm_source=aff-"], :root a[href^="https://www.privateinternetaccess.com/"] > img, :root a[href^="https://www.onlineusershielder.com/"], :root a[href^="https://www.liquidfire.mobi/"], :root a[href^="https://www.infowarsstore.com/"] > img, :root a[href^="https://www.highperformancecpmgate.com/"], :root a[href^="https://www.highcpmrevenuenetwork.com/"], :root a[href^="https://www.googleadservices.com/pagead/aclk?"] > img, :root a[href^="https://www.goldenfrog.com/vyprvpn?offer_id="][href*="&aff_id="], :root a[href^="https://www.get-express-vpn.com/offer/"], :root a[href^="https://lnkxt.bannerator.com/"], :root a[href^="https://www.geekbuying.com/dynamic-ads/"], :root a[href^="https://www.financeads.net/tc.php?"], :root a[href^="https://www.effectiveratecpm.com/"], :root [href^="https://www.herbanomic.com/"] > img, :root a[href^="https://maymooth-stopic.com/"], :root a[href^="https://www.dql2clk.com/"], :root a[href^="https://www.nutaku.net/signup/landing/"], :root a[href^="https://www.dating-finder.com/signup/?ai_d="], :root a[href^="https://explore-site.com/"], :root a[href^="https://www.brazzersnetwork.com/landing/"], :root a[href^="https://www.adxsrve.com/"], :root [data-template-type="nativead"], :root a[href^="https://www.endorico.com/Smartlink/"], :root a[href^="https://www.adultempire.com/"][href*="?partner_id="], :root a[href^="https://voluum.prom-xcams.com/"], :root a[href^="https://twinrdsrv.com/"], :root a[href^="https://trk.nfl-online-streams.club/"], :root a[href^="https://tracking.avapartner.com/"], :root a[href^="https://track.wg-aff.com"], :root a[href^="https://track.ultravpn.com/"], :root a[href^="https://track.afcpatrk.com/"], :root a[href^="https://torguard.net/aff.php"] > img, :root [data-identity="adhesive-ad"], :root a[href^="https://tc.tradetracker.net/"] > img, :root a[href^="https://tatrck.com/"], :root a[href^="https://click.candyoffers.com/"], :root [href^="https://zstacklife.com/"] img, :root a[href^="https://t.aslnk.link/"], :root a[href^="https://t.adating.link/"], :root a[href^="https://t.acam.link/"], :root a[href*="//daichoho.com/"], :root a[href^="https://syndication.optimizesrv.com/"], :root a[href^="https://go.trackitalltheway.com/"], :root [href^="https://track.fiverr.com/visit/"] > img, :root a[href^="https://syndication.exoclick.com/"], :root a[href^="https://syndication.dynsrvtbg.com/"], :root div[data-alias="300x250 Ad 1"], :root a[href^="https://syndicate.contentsserved.com/"], :root a[href^="https://svb-analytics.trackerrr.com/"], :root a[href^="https://ad.doubleclick.net/"], :root a[href^="https://static.fleshlight.com/images/banners/"], :root a[href^="https://slkmis.com/"], :root bottomadblock, :root a[href^="https://s.zlinkd.com/"], :root a[href^="https://s.zlink3.com/"], :root a[href^="https://www.mrskin.com/account/"], :root a[href^="https://s.optzsrv.com/"], :root a[href^="https://s.ma3ion.com/"], :root #kt_player > div[style$="display: block;"][style*="inset: 0px;"], :root [href$="/sexdating.php"], :root a[href^="https://quotationfirearmrevision.com/"], :root a[href^="https://pubads.g.doubleclick.net/"], :root a[href^="https://ak.oalsauwy.net/"], :root a[href^="https://softwa.cfd/"], :root a[href^="https://play1ad.shop/"], :root a[href^="https://prf.hn/click/"][href*="/camref:"] > img, :root a[href^="https://www.dating-finder.com/?ai_d="], :root a[href^="https://serve.awmdelivery.com/"], :root a[href^="https://prf.hn/click/"][href*="/adref:"] > img, :root app-ad, :root [href^="https://ap.octopuspop.com/click/"] > img, :root a[href^="https://postback1win.com/"], :root a[href^="https://mmwebhandler.aff-online.com/"], :root a[href^="https://www.bet365.com/"][href*="affiliate="], :root a[href^="https://pb-track.com/"], :root a[href^="https://pb-front.com/"], :root a[href^="https://paid.outbrain.com/network/redir?"], :root a[href^="https://streamate.com/landing/click/"], :root div[class^="Adstyled__AdWrapper-"], :root a[href^="https://osfultrbriolenai.info/"], :root a[href^="https://upsups.click/"], :root a[href^="https://ndt5.net/"], :root a[href^="http://eighteenderived.com/"], :root a[href^="https://natour.naughtyamerica.com/track/"], :root a[href^="https://mediaserver.entainpartners.com/renderBanner.do?"], :root a[href^="https://m.do.co/c/"] > img, :root .nya-slot[style], :root a[href^="https://a.bestcontentweb.top/"], :root a[href^="https://lobimax.com/"], :root a[href^="https://lead1.pl/"], :root a[href^="https://landing.brazzersnetwork.com/"], :root a[href^="https://join.virtuallust3d.com/"], :root a[href^="https://kiksajex.com/"], :root a[href^="https://juicyads.in/"], :root a[href^="https://snowdayonline.xyz/"], :root a[href^="https://mediaserver.gvcaffiliates.com/renderBanner.do?"], :root a[href^="https://join.dreamsexworld.com/"], :root a[href^="https://jaxofuna.com/"], :root a[href^="https://italarizege.xyz/"], :root a[href^="https://iqbroker.com/"][href*="?aff="], :root a[href^="https://identicaldrench.com/"], :root a[href^="https://hot-growngames.life/"], :root a[href^="https://helmethomicidal.com/"], :root a[href^="https://golinks.work/"], :root ark-top-ad, :root a[href^="https://s.zlinkn.com/"], :root a[href^="https://go.xxxvjmp.com/"], :root [class^="tile-picker__CitrusBannerContainer-sc-"], :root a[href^="https://go.xxxiijmp.com"], :root a[href^="https://go.xtbaffiliates.com/"], :root [data-role="tile-ads-module"], :root a[href^="https://go.xlviirdr.com"], :root div[class$="-adlabel"], :root a[href^="https://go.xlviiirdr.com"], :root a[href^="https://ismlks.com/"], :root [href^="https://www.mypillow.com/"] > img, :root a[href^="https://go.xlirdr.com"], :root [data-css-class="dfp-inarticle"], :root a[href^="https://l.hyenadata.com/"], :root a[href^="https://go.tmrjmp.com"], :root a[href^="https://zirdough.net/"], :root a[href^="https://s.deltraff.com/"], :root a[href^="https://go.markets.com/visit/?bta="], :root a[href^="https://billing.purevpn.com/aff.php"] > img, :root a[href^="https://go.hpyrdr.com/"], :root a[href^="https://lijavaxa.com/"], :root a[href^="https://go.goaserv.com/"], :root a[href^="https://t.hrtye.com/"], :root a[href^="https://go.etoro.com/"] > img, :root a[href^="https://go.dmzjmp.com"], :root a[href^="https://www.bang.com/?aff="], :root #mgb-container > #mgb, :root a[href^="https://go.admjmp.com"], :root a[href^="https://ak.stikroltiltoowi.net/"], :root a[href^="https://get.surfshark.net/aff_c?"][href*="&aff_id="] > img, :root a[href^="https://www.mrskin.com/tour"], :root a[href^="https://financeads.net/tc.php?"], :root a[href^="https://www.adskeeper.com"], :root a[data-redirect^="https://paid.outbrain.com/network/redir?"], :root [href^="https://clicks.affstrack.com/"] > img, :root a[href^="https://ak.hauchiwu.com/"], :root a[href^="https://engine.phn.doublepimp.com/"], :root a[href^="https://engine.blueistheneworanges.com/"], :root a[href^="https://drumskilxoa.click/"], :root a[href^="https://dl-protect.net/"], :root a[href*=".foxqck.com/"], :root a[href^="https://ctosrd.com/"], :root a[href^="https://clixtrac.com/"], :root [href^="https://noqreport.com/"] > img, :root a[href^="https://clicks.pipaffiliates.com/"], :root app-advertisement, :root a[href^="https://getmatchedlocally.com/"], :root a[href^="https://clickins.slixa.com/"], :root a[href^="https://datewhisper.life/"], :root a[href^="https://get-link.xyz/"], :root a[href^="https://click.linksynergy.com/fs-bin/"] > img, :root a[href^="https://combodef.com/"], :root a[href^="https://click.hoolig.app/"], :root a[href^="https://click.ggpickaff.com/"], :root a[href^="https://track.totalav.com/"], :root a[href^="https://ctrdwm.com/"], :root img[src^="https://images.purevpnaffiliates.com"], :root a[href^="https://porntubemate.com/"], :root a[href^="https://clickadilla.com/"], :root a[href^="https://click.dtiserv2.com/"], :root a[href^="https://go.xlvirdr.com"], :root a[href^="http://www.iyalc.com/"], :root a[href^="https://claring-loccelkin.com/"], :root a[href^="https://bongacams2.com/track?"], :root a[href^="https://t.ajrkm1.com/"], :root [href="https://masstortfinancing.com"] img, :root a[href^="https://bongacams10.com/track?"], :root a[href^="https://www.sheetmusicplus.com/"][href*="?aff_id="], :root a[href^="https://bngpt.com/"], :root a[href^="https://black77854.com/"], :root a[href^="https://rixofa.com/"], :root #ads[style^="position: absolute; z-index: 30; width: 100%; height"], :root a[href^="https://disobediencecalculatormaiden.com/"], :root a[href^="https://best-experience-cool.com/"], :root a[href^="https://banners.livepartners.com/"], :root a[href^="https://myclick-2.com/"], :root a[href^="https://sexynearme.com/"], :root a[href^="https://baipahanoop.net/"], :root a[href^="http://revolvemockerycopper.com/"], :root a[href^="https://awptjmp.com/"], :root a[href^="https://join.sexworld3d.com/track/"], :root a[href^="https://aweptjmp.com/"], :root a[href^="https://ausoafab.net/"], :root a[href^="https://random-affiliate.atimaze.com/"], :root broadstreet-zone-container, :root a[href^="https://ak.psaltauw.net/"], :root a[href^="https://adclick.g.doubleclick.net/"], :root a[href^="https://aj1070.online/"], :root a[href^="https://bc.game/"], :root a[href^="https://a.bestcontentoperation.top/"], :root a[href^="https://adultfriendfinder.com/go/"], :root a[href^="https://ads.planetwin365affiliate.com/"], :root a[href^="https://ads.leovegas.com/"], :root a[href^="https://auesk.cfd/"], :root a[href^="https://a2.adform.net/"], :root a[href^="https://a.candyai.love/"], :root a[href^="https://playnano.online/offerwalls/?ref="], :root a[href^="https://a.adtng.com/"], :root .banner-img > .pbl, :root [data-m-ad-id], :root a[href^="https://a-ads.com/"], :root a[href^="https://1winpb.com/"], :root div[id^="rc-widget-"], :root a[href^="http://eslp34af.click/"], :root a[href^="https://turnstileunavailablesite.com/"], :root a[href^="https://chaturbate.com/in/?"], :root a[href^="https://prf.hn/click/"][href*="/creativeref:"] > img, :root a[href*="&maxads="], :root a[href^="http://www.adultempire.com/unlimited/promo?"][href*="&partner_id="], :root a[href^="https://1betandgonow.com/"], :root a[href^="https://eergortu.net/"], :root div[id^="optidigital-adslot"], :root a[href^="https://123-stream.org/"], :root a[href^="http://www.friendlyduck.com/AF_"], :root a[href^="https://go.rmhfrtnd.com"], :root a[href^="https://allhost.shop/aff.php?"], :root [data-dynamic-ads], :root a[href^="http://vnte9urn.click/"], :root a[href^="https://getvideoz.click/"], :root a[href^="http://troopsassistedstupidity.com/"], :root a[href^="http://trk.globwo.online/"], :root a-ad, :root a[href^="https://offhandpump.com/"], :root a[href^="http://stickingrepute.com/"], :root #slashboxes > .deals-rail, :root a[href^="http://roadcontagion.com/"], :root a[href^="http://premonitioninventdisagree.com/"], :root a[href^="http://naggingirresponsible.com/"], :root a[href^="https://in.rabbtrk.com/"], :root a[href^="http://www.h4trck.com/"], :root a[href^="https://81ac.xyz/"], :root a[href^="http://guestblackmail.com/"], :root a[href^="http://cam4com.go2cloud.org/aff_c?"], :root a[href^="https://ads.betfair.com/redirect.aspx?"], :root [href^="https://www.mypatriotsupply.com/"] > img, :root a[href^="https://trk.softonixs.xyz/"], :root a[href^="http://dragnag.com/"], :root a[href^="http://dragfault.com/"], :root [data-advadstrackid], :root a[href^="http://muzzlematrix.com/"], :root a[href^="https://track.adform.net/"], :root a[href^="http://avthelkp.net/"], :root a[href^="https://a.medfoodhome.com/"], :root a[href^="https://engine.flixtrial.com/"], :root [data-type="ad-vertical"], :root [data-taboola-options], :root a[href^="http://annulmentequitycereals.com/"], :root a[href^="//startgaming.net/tienda/" i], :root a[href^="https://s.cant3am.com/"], :root a[href^="//s.st1net.com/splash.php"], :root a[href^="https://join.virtualtaboo.com/track/"], :root [id^="ad_sky"], :root a[href^="http://coefficienttolerategravel.com/"], :root a[href^="https://a.medfoodsafety.com/"], :root a[href^="//go.eabids.com/"], :root a[href^="//ejitsirdosha.net/"], :root a[href^=" https://www.friendlyduck.com/AF_"], :root [data-cl-spot-id], :root a[href*="/jump/next.php?r="], :root a[href^="https://go.rmishe.com/"], :root [href^="https://ilovemyfreedoms.com/landing-"], :root a[href^="https://go.nordvpn.net/aff"] > img, :root .\[\&_\.gdprAdTransparencyCogWheelButton\]\:\!pjra-z-\[5\], :root [href^="http://clicks.totemcash.com/"], :root a[href^="https://ad.zanox.com/ppc/"] > img, :root a[href^="https://lone-pack.com/"], :root [data-d-ad-id], :root a[href*=".engine.adglare.net/"], :root a[href^="https://t.ajrkm3.com/"], :root [href^="https://aads.com/campaigns/"], :root a[href^="//stighoazon.com/"], :root [href^="https://www.profitablegatecpm.com/"], :root div[id^="lazyad-"], :root a[href^="http://com-1.pro/"], :root a[href*=".cfm?domain="][href*="&fp="], :root [data-ad-name], :root a[href^="https://loboclick.com/"], :root a[data-url^="https://vulpix.bet/?ref="], :root a[href^="https://ab.advertiserurl.com/aff/"], :root a[data-oburl^="https://paid.outbrain.com/network/redir?"], :root a[href^="https://go.xlivrdr.com"], :root [onclick^="location.href='https://1337x.vpnonly.site/"], :root [name^="google_ads_iframe"], :root [id^="section-ad-banner"], :root a[href*="//jjgirls.com/sex/Chaturbate"], :root [id^="ad-wrap-"], :root [href^="https://zone.gotrackier.com/"], :root a[href^="http://sarcasmadvisor.com/"], :root [href^="https://www.restoro.com/"], :root [href^="https://www.targetingpartner.com/"], :root .section-subheader > .section-hotel-prices-header, :root [href^="https://www.hostg.xyz/"] > img, :root a[href^="http://adultfriendfinder.com/go/"], :root a[href^="https://fastestvpn.com/lifetime-special-deal?a_aid="], :root a[href^="https://tour.mrskin.com/"], :root [href^="https://www.brighteonstore.com/products/"] img, :root citrus-ad-wrapper, :root a[href^="https://go.grinsbest.com/"], :root a[href^="https://vo2.qrlsx.com/"], :root [href^="https://www.avantlink.com/click.php"] img, :root [href^="https://wct.link/click?"], :root div[data-adunit], :root app-large-ad, :root [href^="https://turtlebids.irauctions.com/"] img, :root div[id^="div-ads-"], :root [href^="https://rapidgator.net/article/premium/ref/"], :root [href^="https://join.girlsoutwest.com/"], :root a[href^="https://activate-game.com/"], :root .scroll-fixable.rail-right > .deals-rail, :root [data-wpas-zoneid], :root a[href^="https://track.aftrk3.com/"], :root [href^="https://join3.bannedsextapes.com"], :root a[href^="https://bodelen.com/"], :root a[href*=".g2afse.com/"], :root div[id^="adngin-"], :root [data-rc-widget], :root span[data-ez-ph-id], :root [href^="https://track.aftrk1.com/"], :root [href^="https://join.playboyplus.com/track/"], :root a[href^="https://go.xxxijmp.com"], :root [href^="https://istlnkcl.com/"], :root a[href^="https://tm-offers.gamingadult.com/"], :root [href^="https://charmingdatings.life/"], :root [href^="https://glersakr.com/"], :root a[href^="https://a.bestcontentfood.top/"], :root [href^="https://cpa.10kfreesilver.com/"], :root [data-id^="div-gpt-ad"], :root a[href^="https://tracker.loropartners.com/"], :root [href^="https://awbbjmp.com/"], :root div[ow-ad-unit-wrapper], :root a[data-href^="http://ads.trafficjunky.net/"], :root a[href^="http://partners.etoro.com/"], :root a[href^="https://www.friendlyduck.com/AF_"], :root [href^="https://ad1.adfarm1.adition.com/"], :root a[href^="https://bngprm.com/"], :root [href^="https://shiftnetwork.infusionsoft.com/go/"] > img, :root a[href^="https://go.strpjmp.com/"], :root a[href^="https://go.bushheel.com/"], :root a[href^="https://ctjdwm.com/"], :root a[href^="https://camfapr.com/landing/click/"], :root div[data-ad-wrapper], :root .gnt_em_vp_c[data-g-s="vp_dk"], :root [href="//sexcams.plus/"], :root [href^="http://www.mypillow.com/"] > img, :root a[href^="https://promerycergerful.com/"], :root #kt_player > a[target="_blank"], :root a[href^="http://bongacams.com/track?"], :root [href^="http://mypillow.com/"] > img, :root [href="https://ourgoldguy.com/contact/"] img, :root a[href^="https://wittered-mainging.com/"], :root #teaser3[style="width: 100%;text-align: center;display: scroll;position:fixed;bottom: 0;margin: 0 auto;z-index: 103;"], :root [href="https://www.masstortfinancing.com/"] > img, :root .ob_container .item-container-obpd, :root [id^="div-gpt-ad"], :root a[href^="https://go.rmhfrtnd.com/"], :root [href="https://jdrucker.com/gold"] > img, :root .grid > .container > #aside-promotion, :root DFP-AD, :root [href^="https://go.xlrdr.com"], :root [data-testid^="taboola-"], :root a[href^="https://track.1234sd123.com/"], :root zeus-ad, :root [data-testid="prism-ad-wrapper"], :root [href^="https://ad.admitad.com/"], :root [href^="https://mypillow.com/"] > img, :root [data-testid="ad_testID"], :root [href^="https://antiagingbed.com/discount/"] > img, :root a[href*=".adsrv.eacdn.com/"], :root [href^="https://optimizedelite.com/"] > img, :root [data-name="adaptiveConstructorAd"], :root a[href^="https://go.cmtaffiliates.com/"], :root [data-testid="adBanner-wrapper"], :root [href^="https://mylead.global/stl/"] > img, :root [href^="https://mypatriotsupply.com/"] > img, :root a[href^="https://go.hpyjmp.com"], :root iframe[scrolling="no"][sandbox*="allow-popups allow-modals"][style^="width: 100%; height: 100%; border: none;"], :root [href^="https://mystore.com/"] > img, :root a[href^="https://believessway.com/"], :root a[href^="https://witnessjacket.com/"], :root [data-mobile-ad-id], :root [class^="amp-ad-"], :root a[href^="http://handgripvegetationhols.com/"], :root a[href^="https://go.bbrdbr.com"], :root a[href^="https://fc.lc/ref/"], :root [data-adshim], :root topadblock, :root a[href^="//s.zlinkd.com/"], :root #teaser1[style^="width:autopx;"], :root [href^="https://www.cloudways.com/en/?id"], :root [data-asg-ins], :root a[href^="https://gamingadlt.com/?offer="], :root [data-desktop-ad-id], :root [id^="ad_slider"], :root [data-adbridg-ad-class], :root #teaser3[style^="width:autopx;"], :root [data-adblockkey], :root [data-block-type="ad"], :root [data-ad-width], :root [onclick*="content.ad/"], :root [data-ad-manager-id], :root AMP-AD, :root [data-ad-cls], :root [data-ez-name], :root a[href^="https://go.mnaspm.com/"], :root a[href^="https://service.bv-aff-trx.com/"], :root a[href^="https://6-partner.com/"], :root [class^="s2nPlayer"], :root a[href^="https://traffdaq.com/"], :root [data-testid="commercial-label-taboola"], :root [class^="div-gpt-ad"], :root a[href^="http://tc.tradetracker.net/"] > img, :root a[href^="https://www8.smartadserver.com/"], :root a[href^="https://pb-imc.com/"], :root [href^="https://affiliate.fastcomet.com/"] > img, :root [class^="adDisplay-module"], :root [data-freestar-ad][id], :root AD-SLOT, :root [data-ad-module], :root a[href^="https://go.skinstrip.net"][href*="?campaignId="], :root #teaser2[style^="width:autopx;"], :root a[href^="https://ngineet.cfd/"], :root [data-revive-zoneid], :root a[href^="https://losingoldfry.com/"], :root div[id^="div-gpt-"], :root a[href^="https://gml-grp.com/"], :root .ob_dual_right > .ob_ads_header ~ .odb_div, :root a[href^="https://cam4com.go2cloud.org/"], :root a[href^="http://li.blogtrottr.com/click?"], :root a[onmousedown^="this.href='https://paid.outbrain.com/network/redir?"], :root a[href^="https://t.ajump1.com/"], :root a[href^="https://go.xxxjmp.com"], :root #leader-companion > a[href] { display: none !important; }</style></head>
+<body>
+    <div class="cursor" style="left: 643px; top: 759px; width: 20px; height: 20px;"></div>
+    <div class="color-overlay"></div>
+    <canvas id="canvas" width="1876" height="934"></canvas>
+    <div class="phone-container">
+        <div class="phone">
+            <div class="app-grid">
+                <div class="app-icon main">?</div>
+                <div class="app-icon gray"></div>
+                <div class="app-icon gray"></div>
+                <div class="app-icon gray"></div>
+                <div class="app-icon gray"></div>
+                <div class="app-icon gray"></div>
+                <div class="app-icon gray"></div>
+                <div class="app-icon gray"></div>
+            </div>
+        </div>
+    </div>
+<div class="background-name" id="name-melvin">Melvin</div>
+<div class="background-name" id="name-louis">Louis</div>
+<div class="background-name" id="name-jaden-leon">Jaden-Leon</div>
+<div class="background-name" id="name-roham">Roham</div>
+<div class="background-name" id="name-jermainé">Jermainé</div>
+<div class="background-name" id="name-marvin">Marvin</div>
+<div class="background-name" id="name-ylldrit">Ylldrit</div>
+<div class="background-name" id="name-anouar">Anouar</div>
+<div class="background-name" id="name-noah">Noah</div>
+<div class="background-name" id="name-max">Max</div>
+<div class="background-name" id="name-lena">Lena</div>
+<div class="background-name" id="name-maja">Maja</div>
+<div class="background-name" id="name-liyana">Liyana</div>
+<div class="background-name" id="name-leona">Leona</div>
+<div class="background-name" id="name-luana">Luana</div>
+<div class="background-name" id="name-purity">Purity</div>
+<div class="background-name" id="name-melina">Melina</div>
+<div class="background-name" id="name-tara">Tara</div>
+<div class="background-name" id="name-zeineb">Zeineb</div>
+<div class="background-name" id="name-ravan">Ravan</div>
+<div class="background-name" id="name-esra">Esra</div>
+<div class="background-name" id="name-solea">Solea</div>
+<div class="background-name" id="name-schiller">Hr. Schiller</div>
+<div class="background-name" id="name-dietz">Fr. Dietz</div>
+<script>
+    const placedPositions = [];
+
+    function randomizeNamePosition(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        const padding = 20;
+
+        const protectedZone = {
+            x: window.innerWidth * 0.3,
+            y: window.innerHeight * 0.4,
+            width: window.innerWidth * 0.4,
+            height: window.innerHeight * 0.2
+        };
+
+        function isInProtectedZone(x, y, w, h) {
+            return (
+                x + w > protectedZone.x &&
+                x < protectedZone.x + protectedZone.width &&
+                y + h > protectedZone.y &&
+                y < protectedZone.y + protectedZone.height
+            );
+        }
+
+        function overlapsExisting(x, y, w, h) {
+            return placedPositions.some(pos => {
+                return (
+                    x < pos.x + pos.width + padding &&
+                    x + w + padding > pos.x &&
+                    y < pos.y + pos.height + padding &&
+                    y + h + padding > pos.y
+                );
+            });
+        }
+
+        function getValidPosition() {
+            const elWidth = el.offsetWidth;
+            const elHeight = el.offsetHeight;
+
+            for (let i = 0; i < 100; i++) {
+                const maxX = window.innerWidth - elWidth - padding;
+                const maxY = window.innerHeight - elHeight - padding;
+
+                const x = Math.random() * maxX;
+                const y = Math.random() * maxY;
+
+                if (!isInProtectedZone(x, y, elWidth, elHeight) &&
+                    !overlapsExisting(x, y, elWidth, elHeight)) {
+                    return { x, y, width: elWidth, height: elHeight };
+                }
+            }
+
+            return { x: 0, y: 0, width: el.offsetWidth, height: el.offsetHeight };
+        }
+
+        const pos = getValidPosition();
+        el.style.left = `${pos.x}px`;
+        el.style.top = `${pos.y}px`;
+        placedPositions.push(pos);
+    }
+
+    function randomizeNamePositionA(id) {
+        randomizeNamePosition(id);
+    }
+
+    window.addEventListener('load', () => {
+        placedPositions.length = 0; // clear from last render
+        randomizeNamePosition('name-melvin');
+        randomizeNamePosition('name-louis');
+        randomizeNamePosition('name-jaden-leon');
+        randomizeNamePositionA('name-roham');
+        randomizeNamePosition('name-jermainé');
+        randomizeNamePosition('name-marvin');
+        randomizeNamePosition('name-ylldrit');
+        randomizeNamePosition('name-anouar');
+        randomizeNamePosition('name-noah');
+        randomizeNamePosition('name-max');
+        randomizeNamePosition('name-lena');
+        randomizeNamePosition('name-maja');
+        randomizeNamePosition('name-liyana');
+        randomizeNamePosition('name-leona');
+        randomizeNamePosition('name-luana');
+        randomizeNamePosition('name-purity');
+        randomizeNamePosition('name-melina');
+        randomizeNamePosition('name-tara');
+        randomizeNamePosition('name-zeineb');
+        randomizeNamePosition('name-ravan');
+        randomizeNamePosition('name-esra');
+        randomizeNamePosition('name-solea');
+        randomizeNamePosition('name-schiller');
+        randomizeNamePosition('name-dietz');
+    });
+</script>
+
+    <div class="soon-text">SOON</div>
+    <div class="color-wave">
+        <div class="wave-text">
+            😎
+            <div class="floating-marks" id="floatingMarks"><div class="question-mark" style="font-size: 45.313px; --startX: -100px; --startY: 84.40448167260432px; --endX: 1883.0134348290728px; --endY: 877.2383820115178px; --rot: 527.5496584476919deg; animation-delay: 8.08088s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 35.1826px; --startX: 1976px; --startY: 717.3509577908301px; --endX: -116.05952029877282px; --endY: 119.02710836077016px; --rot: 19.44759362033959deg; animation-delay: 5.28407s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 79.5869px; --startX: -100px; --startY: 378.03330823487266px; --endX: 2027.9605002673165px; --endY: 559.7901421575083px; --rot: 285.5321174134012deg; animation-delay: 7.11517s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 40.4011px; --startX: -100px; --startY: 893.0050006085818px; --endX: 1917.4653358472217px; --endY: 139.88325944878616px; --rot: -38.85185258651475deg; animation-delay: 3.35888s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 24.7304px; --startX: 212.93756488309px; --startY: 1034px; --endX: 1714.2094532866904px; --endY: -104.25673360434912px; --rot: -360.9063417938747deg; animation-delay: 4.09354s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 42.8912px; --startX: 1564.9980970601562px; --startY: -100px; --endX: 401.47172031852097px; --endY: 1003.5687412568087px; --rot: 412.2275827382318deg; animation-delay: 7.28824s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 79.1479px; --startX: 1976px; --startY: 4.904092856011893px; --endX: -101.35638654661365px; --endY: 945.6662347781062px; --rot: -433.53205893431556deg; animation-delay: 8.71084s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 70.9978px; --startX: 749.3816689971497px; --startY: -100px; --endX: 1193.3035245544463px; --endY: 970.8460323837447px; --rot: -292.98557588906607deg; animation-delay: 6.20539s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 38.0784px; --startX: -100px; --startY: 607.620956820647px; --endX: 1992.8843929587883px; --endY: 392.32750338378565px; --rot: 67.2323119047123deg; animation-delay: 8.94215s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 76.4739px; --startX: -100px; --startY: 932.4961028844866px; --endX: 1911.8649301373187px; --endY: 89.31804061087357px; --rot: -369.1083152477387deg; animation-delay: 4.79932s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 22.8775px; --startX: -100px; --startY: 691.3069084894692px; --endX: 1920.1353179892378px; --endY: 306.68137781777574px; --rot: 287.8663591116376deg; animation-delay: 4.04634s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 39.469px; --startX: 1976px; --startY: 505.23218130307845px; --endX: -191.82381810515608px; --endY: 500.382784088488px; --rot: 477.84374922926656deg; animation-delay: 10.8368s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 46.4501px; --startX: -100px; --startY: 381.86562298156724px; --endX: 2050.64872112919px; --endY: 632.9179423847906px; --rot: -413.4167523171769deg; animation-delay: 11.8523s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 68.0873px; --startX: 1200.4438342081103px; --startY: 1034px; --endX: 604.1562413823482px; --endY: -196.4441653548683px; --rot: -422.5609288113305deg; animation-delay: 0.139186s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 53.0308px; --startX: -100px; --startY: 373.52585105302325px; --endX: 2045.1718199384422px; --endY: 641.1810397727137px; --rot: 505.0182587646572deg; animation-delay: 5.88826s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 45.2786px; --startX: 1596.6466577501683px; --startY: -100px; --endX: 208.49128261391547px; --endY: 1081.712522905562px; --rot: -509.3398247641683deg; animation-delay: 1.96064s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 42.7498px; --startX: 1976px; --startY: 439.8955312765806px; --endX: -180.1029438006522px; --endY: 425.35335468495725px; --rot: 60.792678141786986deg; animation-delay: 3.84978s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 56.6416px; --startX: -100px; --startY: 93.81024394056246px; --endX: 2045.9670105180517px; --endY: 787.031234016422px; --rot: 168.98705889340164deg; animation-delay: 10.59s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 65.8862px; --startX: 1976px; --startY: 291.11709260800166px; --endX: -56.255781049733145px; --endY: 709.1874760509943px; --rot: 504.38441601366657deg; animation-delay: 10.8187s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 32.6495px; --startX: 1596.0420204336122px; --startY: -100px; --endX: 320.59955786136425px; --endY: 979.818432366436px; --rot: -431.39024278224696deg; animation-delay: 4.77331s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 49.186px; --startX: 929.5649985804189px; --startY: 1034px; --endX: 905.9881655037772px; --endY: -12.501195342078518px; --rot: -484.3986203800396deg; animation-delay: 5.69255s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 72.0171px; --startX: 121.99875952821749px; --startY: 1034px; --endX: 1713.2012849882333px; --endY: -105.36250749075467px; --rot: -260.5145792812419deg; animation-delay: 11.9499s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 77.2329px; --startX: -100px; --startY: 907.3327127509172px; --endX: 2055.767416260233px; --endY: 93.58679983120163px; --rot: -223.1611026496525deg; animation-delay: 9.89486s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 36.0598px; --startX: 1976px; --startY: 789.3363470007068px; --endX: -181.88634620091406px; --endY: 152.73830066609509px; --rot: -159.96375544349823deg; animation-delay: 1.90941s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 37.6516px; --startX: 371.5218847566784px; --startY: 1034px; --endX: 1576.5667461293226px; --endY: -54.504791944377786px; --rot: -521.513565313654deg; animation-delay: 2.16263s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 71.8375px; --startX: 1109.4686832495877px; --startY: 1034px; --endX: 676.6904794809861px; --endY: -33.94667367285531px; --rot: -30.608386987567073deg; animation-delay: 10.0717s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 37.8596px; --startX: 1976px; --startY: 419.7756619485459px; --endX: -198.259279485884px; --endY: 604.7584412322904px; --rot: -103.03962301569804deg; animation-delay: 0.455197s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 43.2741px; --startX: 1976px; --startY: 378.94216975776527px; --endX: -181.7626665995375px; --endY: 648.1817080095259px; --rot: 176.84764744132485deg; animation-delay: 3.74045s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 52.3345px; --startX: 1976px; --startY: 221.56784570186522px; --endX: -50.742865141535674px; --endY: 732.4057924072471px; --rot: -502.0703654676858deg; animation-delay: 2.57342s; left: 0px; top: 0px;">?</div><div class="question-mark" style="font-size: 59.5284px; --startX: 1976px; --startY: 881.3430627029358px; --endX: -76.41422450251px; --endY: 99.08065458749074px; --rot: -377.87436801310093deg; animation-delay: 1.93378s; left: 0px; top: 0px;">?</div></div>
+        </div>
+        <a href="https://x.com/experilux" target="_blank" class="follow-button">
+            Follow for Updates
+        </a>
+    </div>
+    <div class="signature">© 2025 Melvin. All rights reserved.</div>
+    <script src="./Experilux_files/particles.js.download"></script>
+    <script>
+        const cursor = document.querySelector('.cursor');
+        const colorOverlay = document.querySelector('.color-overlay');
+        const phoneContainer = document.querySelector('.phone-container');
+        const soonText = document.querySelector('.soon-text');
+        const signature = document.querySelector('.signature');
+        const colorWave = document.querySelector('.color-wave');
+        const waveText = document.querySelector('.wave-text');
+        const followButton = document.querySelector('.follow-button');
+        
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        document.addEventListener('mousedown', () => {
+            cursor.style.width = '15px';
+            cursor.style.height = '15px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            cursor.style.width = '20px';
+            cursor.style.height = '20px';
+        });
+
+        // Update the scroll event listener to track scroll direction
+        let lastScrollTop = 0;
+        let hasBeenAbsorbed = false;
+
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY;
+            const scrollPercent = scrollTop / (document.body.scrollHeight - window.innerHeight);
+            const scrollingDown = scrollTop > lastScrollTop;
+            
+            // Color overlay
+            colorOverlay.style.opacity = Math.min(scrollPercent * 2, 0.5);
+            
+            // Particle absorption and phone animation (20% - 40% of scroll)
+            if (scrollPercent > 0.2) {
+                const phoneScale = Math.min((scrollPercent - 0.2) * 5, 1);
+                phoneContainer.style.opacity = phoneScale;
+                
+                // Start particle absorption at 30% scroll
+                if (scrollPercent > 0.3 && scrollPercent < 0.4) {
+                    if (scrollingDown) {
+                        hasBeenAbsorbed = true;
+                    }
+                    window.setParticleAbsorption(true);
+                } else {
+                    // Only allow particles to reappear if scrolling up and before absorption point
+                    if (!scrollingDown && scrollPercent < 0.3 && !hasBeenAbsorbed) {
+                        window.setParticleAbsorption(false);
+                    }
+                }
+                
+                if (scrollPercent <= 0.4) {
+                    phoneContainer.style.transform = `translate(-50%, -50%) scale(${phoneScale})`;
+                } else {
+                    const moveRightPercent = (scrollPercent - 0.4) * 3.33;
+                    const xOffset = Math.min(moveRightPercent * 100, 100);
+                    phoneContainer.style.transform = `translate(calc(-50% + ${xOffset}vw), -50%) scale(1)`;
+                }
+            } else {
+                phoneContainer.style.opacity = 0;
+                phoneContainer.style.transform = 'translate(-50%, -50%) scale(0)';
+                // Reset absorption state when scrolling back to top
+                if (scrollPercent === 0) {
+                    hasBeenAbsorbed = false;
+                    window.setParticleAbsorption(false);
+                }
+            }
+            
+            // SOON text animation (40% - 60% of scroll)
+            if (scrollPercent > 0.4) {
+                const soonPercent = (scrollPercent - 0.4) * 3.33;
+                soonText.style.opacity = Math.min(soonPercent * 2, 1);
+                const xOffset = Math.min(soonPercent * 100, 100);
+                soonText.style.transform = `translate(${xOffset}%, -50%)`;
+            } else {
+                soonText.style.opacity = 0;
+                soonText.style.transform = 'translate(-100%, -50%)';
+            }
+            
+            // Final screen animation (60% - 100% of scroll)
+            if (scrollPercent > 0.6) {
+                const finalPercent = (scrollPercent - 0.6) * 2.5;
+                colorWave.style.transform = `translateY(${Math.max(0, 100 - finalPercent * 100)}%)`;
+                colorWave.style.opacity = Math.min(finalPercent * 2, 1);
+                
+                if (finalPercent > 0.5) {
+                    const textPercent = (finalPercent - 0.5) * 2;
+                    waveText.style.opacity = Math.min(textPercent * 2, 1);
+                    waveText.style.transform = `translateY(${Math.max(0, 50 - textPercent * 100)}px)`;
+                    followButton.style.opacity = Math.min(textPercent * 2, 1);
+                }
+            } else {
+                colorWave.style.transform = 'translateY(100%)';
+                colorWave.style.opacity = 0;
+                waveText.style.opacity = 0;
+                waveText.style.transform = 'translateY(50px)';
+                followButton.style.opacity = 0;
+            }
+            
+            // Signature fade out
+            signature.style.opacity = 1 - Math.min(scrollPercent * 2, 1);
+
+            lastScrollTop = scrollTop;
+        });
+    </script>
+    <script>
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer="" src="./Experilux_files/script.js.download"></script>
+    <script>
+        function createQuestionMarks() {
+            const container = document.getElementById('floatingMarks');
+            const numMarks = 30; // Increased number of question marks
+            
+            function createMark() {
+                const mark = document.createElement('div');
+                mark.className = 'question-mark';
+                mark.textContent = '?';
+                
+                // Random size between 20px and 80px
+                const size = 20 + Math.random() * 60;
+                mark.style.fontSize = `${size}px`;
+                
+                // Random start position along the edges of the viewport
+                const edge = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
+                let startX, startY, endX, endY;
+                
+                switch(edge) {
+                    case 0: // top
+                        startX = Math.random() * window.innerWidth;
+                        startY = -100;
+                        break;
+                    case 1: // right
+                        startX = window.innerWidth + 100;
+                        startY = Math.random() * window.innerHeight;
+                        break;
+                    case 2: // bottom
+                        startX = Math.random() * window.innerWidth;
+                        startY = window.innerHeight + 100;
+                        break;
+                    case 3: // left
+                        startX = -100;
+                        startY = Math.random() * window.innerHeight;
+                        break;
+                }
+                
+                // Random end position (opposite side of the viewport)
+                endX = window.innerWidth - startX + (Math.random() - 0.5) * 200;
+                endY = window.innerHeight - startY + (Math.random() - 0.5) * 200;
+                
+                // Set CSS variables for the animation
+                mark.style.setProperty('--startX', `${startX}px`);
+                mark.style.setProperty('--startY', `${startY}px`);
+                mark.style.setProperty('--endX', `${endX}px`);
+                mark.style.setProperty('--endY', `${endY}px`);
+                mark.style.setProperty('--rot', `${(Math.random() - 0.5) * 1080}deg`); // Up to 3 rotations
+                
+                // Random animation delay
+                mark.style.animationDelay = `${Math.random() * 12}s`;
+                
+                // Initial position
+                mark.style.left = '0';
+                mark.style.top = '0';
+                
+                container.appendChild(mark);
+                
+                // Remove and recreate the mark after animation ends
+                mark.addEventListener('animationend', () => {
+                    mark.remove();
+                    createMark();
+                });
+            }
+            
+            // Create initial set of marks
+            for (let i = 0; i < numMarks; i++) {
+                createMark();
+            }
+        }
+
+        // Call the function when the page loads and handle resize
+        window.addEventListener('load', createQuestionMarks);
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('floatingMarks');
+            container.innerHTML = '';
+            createQuestionMarks();
+        });
+    </script>
+
+ </body></html>
