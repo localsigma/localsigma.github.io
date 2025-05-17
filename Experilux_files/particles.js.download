@@ -1,0 +1,176 @@
+class Particle {
+    constructor(x, y, targetX, targetY) {
+        this.x = Math.random() * window.innerWidth;
+        this.y = Math.random() * window.innerHeight;
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.originalTargetX = targetX;
+        this.originalTargetY = targetY;
+        this.speed = 0.02;
+        this.size = 1.5;
+        this.velocityX = 0;
+        this.velocityY = 0;
+        this.mouseInfluence = 120;
+        this.absorbing = false;
+        this.absorbProgress = 0;
+        this.absorbed = false;
+        this.visible = true;
+    }
+
+    update(mouseX, mouseY, phoneCenter, isAbsorbing) {
+        if (isAbsorbing && !this.absorbing && !this.absorbed) {
+            this.absorbing = true;
+            this.targetX = phoneCenter.x + (Math.random() - 0.5) * 200;
+            this.targetY = phoneCenter.y + (Math.random() - 0.5) * 400;
+        }
+
+        // Only allow reappearance if not absorbed
+        if (!isAbsorbing && this.absorbing && !this.absorbed) {
+            this.absorbing = false;
+            this.targetX = this.originalTargetX;
+            this.targetY = this.originalTargetY;
+        }
+
+        // Move towards target position
+        let dx = this.targetX - this.x;
+        let dy = this.targetY - this.y;
+        
+        // Mouse interaction when not absorbing
+        if (!this.absorbing && !this.absorbed) {
+            let mouseDistance = Math.sqrt(
+                Math.pow(mouseX - this.x, 2) + 
+                Math.pow(mouseY - this.y, 2)
+            );
+            
+            if (mouseDistance < this.mouseInfluence) {
+                let force = (this.mouseInfluence - mouseDistance) / this.mouseInfluence;
+                dx += (this.x - mouseX) * force;
+                dy += (this.y - mouseY) * force;
+            }
+        }
+
+        // Adjust speed based on absorption state
+        const currentSpeed = this.absorbing ? 0.05 : this.speed;
+
+        this.velocityX = dx * currentSpeed;
+        this.velocityY = dy * currentSpeed;
+        
+        this.x += this.velocityX;
+        this.y += this.velocityY;
+
+        if (this.absorbing) {
+            this.absorbProgress = Math.min(1, this.absorbProgress + 0.02);
+            this.size = Math.max(0.5, 1.5 * (1 - this.absorbProgress));
+            if (this.absorbProgress === 1) {
+                this.absorbed = true;
+                this.visible = false;
+            }
+        }
+    }
+
+    draw(ctx) {
+        if (this.visible) {
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    reset() {
+        this.absorbed = false;
+        this.absorbing = false;
+        this.absorbProgress = 0;
+        this.size = 1.5;
+        this.visible = true;
+        this.x = Math.random() * window.innerWidth;
+        this.y = Math.random() * window.innerHeight;
+        this.targetX = this.originalTargetX;
+        this.targetY = this.originalTargetY;
+    }
+}
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let mouseX = 0;
+let mouseY = 0;
+let isAbsorbing = false;
+let phoneCenter = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+function init() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Create text path with responsive font size
+    const fontSize = Math.min(120, window.innerWidth / 8);
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    const text = '4/5/6 G';
+    const textMetrics = ctx.measureText(text);
+    const textWidth = textMetrics.width;
+    
+    ctx.fillText(text, canvas.width/2, canvas.height/2);
+    
+    const particleSpacing = window.innerWidth < 768 ? 6 : 3;
+    
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    particles = [];
+    for(let y = 0; y < canvas.height; y += particleSpacing) {
+        for(let x = 0; x < canvas.width; x += particleSpacing) {
+            const index = (y * canvas.width + x) * 4;
+            if(pixels[index] > 0) {
+                particles.push(new Particle(x, y, x, y));
+            }
+        }
+    }
+}
+
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    particles.forEach(particle => {
+        particle.update(mouseX, mouseY, phoneCenter, isAbsorbing);
+        particle.draw(ctx);
+    });
+    
+    requestAnimationFrame(animate);
+}
+
+canvas.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    phoneCenter = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    particles = [];
+    init();
+});
+
+// Update the export function
+window.setParticleAbsorption = (absorbing) => {
+    isAbsorbing = absorbing;
+    if (!absorbing) {
+        // Only reset particles that haven't been fully absorbed
+        particles.forEach(particle => {
+            if (!particle.absorbed) {
+                particle.reset();
+            }
+        });
+    }
+};
+
+init();
+animate(); 
