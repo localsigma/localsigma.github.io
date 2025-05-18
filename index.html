@@ -270,20 +270,16 @@
             will-change: opacity;
         }
 
-        .background-name {
-    position: fixed;
-    margin: 0;
-    padding: 0;
-    color: rgba(255, 255, 255, 0.8);
-    font-family: Arial, sans-serif;
-    font-size: clamp(2rem, 3vw, 4rem);
-    font-weight: bold;
-    text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
-    z-index: 1;
-    pointer-events: none;
-    user-select: none;
-    white-space: nowrap;
-        }
+.background-name {
+    visibility: hidden;
+}
+
+@media (max-width: 768px) {
+    .background-name {
+        font-size: 1.5rem;
+    }
+}
+
 
 
 
@@ -400,6 +396,7 @@
         el.style.left = `${pos.x}px`;
         el.style.top = `${pos.y}px`;
         placedPositions.push(pos);
+        el.style.visibility = 'visible';
     }
 
     function randomizeNamePositionA(id) {
@@ -407,32 +404,18 @@
     }
 
     window.addEventListener('load', () => {
-        placedPositions.length = 0; // clear from last render
-        randomizeNamePosition('name-melvin');
-        randomizeNamePosition('name-louis');
-        randomizeNamePosition('name-jaden-leon');
-        randomizeNamePositionA('name-roham');
-        randomizeNamePosition('name-jermainé');
-        randomizeNamePosition('name-marvin');
-        randomizeNamePosition('name-ylldrit');
-        randomizeNamePosition('name-anouar');
-        randomizeNamePosition('name-noah');
-        randomizeNamePosition('name-max');
-        randomizeNamePosition('name-lena');
-        randomizeNamePosition('name-maja');
-        randomizeNamePosition('name-liyana');
-        randomizeNamePosition('name-leona');
-        randomizeNamePosition('name-luana');
-        randomizeNamePosition('name-purity');
-        randomizeNamePosition('name-melina');
-        randomizeNamePosition('name-tara');
-        randomizeNamePosition('name-zeineb');
-        randomizeNamePosition('name-ravan');
-        randomizeNamePosition('name-esra');
-        randomizeNamePosition('name-solea');
-        randomizeNamePosition('name-schiller');
-        randomizeNamePosition('name-dietz');
-    });
+    setTimeout(() => {
+        placedPositions.length = 0;
+        [
+            'name-melvin', 'name-louis', 'name-jaden-leon', 'name-roham',
+            'name-jermainé', 'name-marvin', 'name-ylldrit', 'name-anouar',
+            'name-noah', 'name-max', 'name-lena', 'name-maja', 'name-liyana',
+            'name-leona', 'name-luana', 'name-purity', 'name-melina', 'name-tara',
+            'name-zeineb', 'name-ravan', 'name-esra', 'name-solea',
+            'name-schiller', 'name-dietz'
+        ].forEach(randomizeNamePosition);
+    }, 100);
+});
 </script>
 
     <div class="soon-text">SOON</div>
